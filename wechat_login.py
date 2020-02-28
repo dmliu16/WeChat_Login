@@ -90,28 +90,30 @@ def getOpenId_time():
 	log_fetcher = SaeLogFetcher(ACCESSKEY, SECRETKEY)
 
 	result = log_fetcher.fetch_log(service, date, ident, fop, version)
-	result = result.decode('latin-1') 
-
-	content = result.split('\n')[:-1]
-
-	info = ''
-
-	for i in range(len(content)-1, -1, -1):
-		if ("POST" in content[i] and "openid" in content[i]):
-			info = content[i]
-			break
 	try:
+		result = result.decode('latin-1') 
+
+		content = result.split('\n')[:-1]
+
+		info = ''
+
+		for i in range(len(content)-1, -1, -1):
+			if ("POST" in content[i] and "openid" in content[i]):
+				info = content[i]
+				break
+
 		# Extract the openid
 		# this parse the string and get the openid
 		openid = info[info.find("openid"):].split()[0][7:]
 		time = info[(info.find("[")+1):info.find(" +")]
 
 		date_time = datetime.strptime(time, '%d/%b/%Y:%H:%M:%S')
+		return [openid, date_time]
 	except:
 		print("No data in this date: " + date)
-		return ['', datetime.utcnow()]
+		return ['', datetime.utcnow()-timedelta(hours=12)]
 
-	return [openid, date_time]
+	
 
 
 scanTime = getChinaTime()[0]
@@ -147,18 +149,47 @@ import json
 
 user_info = json.loads(r3.content.decode())
 
-print(str(user_info))
+
+from tkinter import *
+
+from PIL import Image
+import requests
+from io import BytesIO
+from PIL import ImageTk,Image
+
+master = Tk()
+
+canvas_width = 760
+canvas_height = 400
+w = Canvas(master, 
+           width=canvas_width,
+           height=canvas_height)
+w.pack()
+
+url = user_info['headimgurl']
+response = requests.get(url)
+
+head = Image.open(BytesIO(response.content)).resize((280, 280), Image.ANTIALIAS)
+headshot = ImageTk.PhotoImage(head)  
+
+#w.create_line(0, y, canvas_width, y, fill="#476042")
+w.create_image(60, 60, anchor=NW, image=headshot)  
+w.create_text(3*canvas_width / 4 , 3*canvas_height / 12, text="昵称：" + user_info['nickname'])
+w.create_text(3*canvas_width / 4 , 5*canvas_height / 12, text="地区：" + user_info['country'] + " " + user_info['province']
+	+ " " + user_info['city'])
+
+sex = ""
+if user_info['sex'] == 1: 
+	sex = "男"
+elif user_info['sex'] == 2:
+	sex = "女"
+else:
+	sex = " "
+
+w.create_text(3*canvas_width / 4, 7*canvas_height / 12, text="性别：" + sex)
 
 
-
-
-
-
-
-
-
-
-
+mainloop()
 
 
 
